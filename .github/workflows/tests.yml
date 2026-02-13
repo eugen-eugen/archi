@@ -1,6 +1,8 @@
 name: Archi Tests
 
-on: [push]
+on:
+  workflow_dispatch:
+  push:
 
 jobs:
   build-and-test:

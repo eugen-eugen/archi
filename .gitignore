@@ -31,7 +31,7 @@ Thumbs.db
 
 # Eclipse project metadata
 .polyglot.*
-**/.project
+.project
 
 
 # Build outputs (recursive for multi-module)
