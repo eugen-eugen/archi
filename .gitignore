@@ -19,3 +19,22 @@ com.archimatetool.reports.jar
 com.archimatetool.templates.jar
 com.archimatetool.widgets.jar
 com.archimatetool.zest.jar
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE/editor settings
+.vscode/
+.idea/
+*.iml
+
+# Eclipse project metadata
+.polyglot.*
+**/.project
+
+
+# Build outputs (recursive for multi-module)
+**/bin/
+**/build/
+out/

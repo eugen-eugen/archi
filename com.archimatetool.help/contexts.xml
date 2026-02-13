@@ -57,6 +57,7 @@
     <context id="labelPropertySection" title="Label Expression">
        <description>Edit Label Expression.</description>
        <topic href="https://github.com/archimatetool/archi/wiki/Label-Expressions" label="Label Expressions"/>
+       <topic href="help/Text/label_expressions_specialization.html" label="Specialization of Label Expressions"/>
     </context>
     <context id="folderSection" title="Folder Properties">
        <description>Edit Folder Properties.</description>

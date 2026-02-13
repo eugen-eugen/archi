@@ -19,6 +19,8 @@ import com.archimatetool.model.IDiagramModelNote;
 import com.archimatetool.model.IDiagramModelReference;
 import com.archimatetool.model.IFolder;
 import com.archimatetool.model.IJunction;
+import com.archimatetool.model.IProfile;
+import com.archimatetool.model.IProfiles;
 
 /**
  * Render Text for display in Text controls in diagrams
@@ -73,7 +75,25 @@ public class TextRenderer {
      * @return The rendered text, or defaultText if no rendering is performed
      */
     public String render(IArchimateModelObject object, String defaultText) {
-        return renderWithExpression(object, getFormatExpression(object), defaultText);
+        String expression = getFormatExpression(object);
+
+        // Fallback: use specialization's label expression if object has none
+        if(!StringUtils.isSet(expression)) {
+            // Visual element with ArchiMate concept
+            if(object instanceof IDiagramModelArchimateComponent dmac) {
+                if(dmac.getArchimateConcept() instanceof IProfiles profilesOwner) {
+                    IProfile profile = profilesOwner.getPrimaryProfile();
+                    if(profile != null) {
+                        String profileExpr = profile.getFeatures().getString(FEATURE_NAME, null);
+                        if(StringUtils.isSet(profileExpr)) {
+                            expression = profileExpr;
+                        }
+                    }
+                }
+            }
+        }
+
+        return renderWithExpression(object, expression, defaultText);
     }
     
    /**

@@ -55,6 +55,12 @@ public class Messages extends NLS {
     public static String ProfilesManagerDialog_8;
 
     public static String ProfilesManagerDialog_9;
+
+    public static String ProfilesManagerDialog_17;
+
+    public static String LabelExpressionDialog_0;
+    public static String LabelExpressionDialog_1;
+    public static String LabelExpressionDialog_2;
     static {
         // initialize resource bundle
         NLS.initializeMessages(BUNDLE_NAME, Messages.class);

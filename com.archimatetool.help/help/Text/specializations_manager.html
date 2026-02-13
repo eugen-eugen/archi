@@ -43,6 +43,20 @@
     <h3>Adding or removing an image for a Specialization</h3>
     <p>Element specializations (except Junction) can also be associated with an image which will be displayed when the specialization Element is used in a View. Select an image for the object or clear the image from the "Image..." button or by double-clicking in the image preview box. See "<a href="image_chooser.html">Adding Images to Objects</a>" for more details.</p>
 
+    <h3>Customizing the label for a Specialization</h3>
+    <p>You can define a custom label expression for a specialization using the <strong>Customize label</strong> button. The button is enabled when one or more specializations are selected in the table.</p>
+    <ul>
+        <li>Click <strong>Customize label</strong> to open a dialog where you can enter a label expression (supports the same expression syntax used for diagram labels).</li>
+        <li>If multiple specializations are selected, the dialog pre-fills the expression only when they share the same value; otherwise the field is blank.</li>
+        <li>Saving the dialog applies the expression to all selected specializations.</li>
+    </ul>
+    <p>Rendering precedence:</p>
+    <ul>
+        <li>If a concrete visual element has its own label expression, that is used.</li>
+        <li>Otherwise, if the element has a specialization with a label expression, the specialization’s expression is used.</li>
+        <li>If neither is set, the element’s default name is displayed.</li>
+    </ul>
+
     <h3>Applying a Specialization to an ArchiMate concept</h3>
     <p>A Specialization can be applied to a concept by selecting it in its <a href="properties_element.html">Properties Window</a>.</p>
 

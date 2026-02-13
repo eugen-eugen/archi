@@ -273,6 +273,60 @@ public class TextRendererTests {
         assertEquals("This \nis a \nProperty", textRenderer.renderWithExpression(dmo, "${wordwrap:6:$model{property:p1}}"));
     }
 
+    // ============================= Specialization Fallback Tests =========================================
+
+    @Test
+    public void render_FallbackToSpecialization_Object() {
+        IDiagramModelArchimateObject dmo = TextRendererTests.createDiagramModelObject();
+        // No element-level expression set
+        dmo.getFeatures().putString(TextRenderer.FEATURE_NAME, null);
+        // Set specialization label expression on primary profile
+        IProfile primary = dmo.getArchimateConcept().getPrimaryProfile();
+        primary.getFeatures().putString(TextRenderer.FEATURE_NAME, "${name} - ${type}");
+
+        assertEquals("Concept Name - Business Actor", textRenderer.render(dmo, "default"));
+    }
+
+    @Test
+    public void render_FallbackToSpecialization_Connection() {
+        IDiagramModelArchimateConnection dmc = TextRendererTests.createDiagramModelConnection();
+        // No element-level expression set
+        dmc.getFeatures().putString(TextRenderer.FEATURE_NAME, null);
+        // Create and attach a specialization profile to the relationship
+        IProfile relProfile = IArchimateFactory.eINSTANCE.createProfile();
+        relProfile.setName("RelProfile");
+        relProfile.setConceptType(IArchimatePackage.eINSTANCE.getAssignmentRelationship().getName());
+        dmc.getArchimateConcept().getProfiles().add(relProfile);
+        relProfile.getFeatures().putString(TextRenderer.FEATURE_NAME, "${name} - ${type}");
+
+        assertEquals("Relation Name - Assignment relation", textRenderer.render(dmc, "default"));
+    }
+
+    @Test
+    public void render_PrefersElementExpression_OverSpecialization() {
+        IDiagramModelArchimateObject dmo = TextRendererTests.createDiagramModelObject();
+        // Element-level expression
+        dmo.getFeatures().putString(TextRenderer.FEATURE_NAME, "${documentation}");
+        // Specialization expression also set
+        IProfile primary = dmo.getArchimateConcept().getPrimaryProfile();
+        primary.getFeatures().putString(TextRenderer.FEATURE_NAME, "${name} - ${type}");
+
+        // Element expression should take precedence
+        assertEquals("Concept Documentation", textRenderer.render(dmo, "default"));
+    }
+
+    @Test
+    public void render_DefaultWhenNoExpressions() {
+        IDiagramModelArchimateObject dmo = TextRendererTests.createDiagramModelObject();
+        // Clear element-level expression
+        dmo.getFeatures().putString(TextRenderer.FEATURE_NAME, null);
+        // Ensure specialization profile has no expression
+        IProfile primary = dmo.getArchimateConcept().getPrimaryProfile();
+        primary.getFeatures().putString(TextRenderer.FEATURE_NAME, "");
+
+        assertEquals("default", textRenderer.render(dmo, "default"));
+    }
+
     // ============================= Utils =========================================
     
     static IDiagramModelArchimateObject createDiagramModelObject() {

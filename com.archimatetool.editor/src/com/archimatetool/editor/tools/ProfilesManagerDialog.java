@@ -107,9 +107,10 @@ public class ProfilesManagerDialog extends ExtendedTitleAreaDialog {
     private TableViewer fTableViewer;
     
     private Button fButtonNew, fButtonDelete;
-    private IAction fActionNew, fActionDelete, fActionChooseImage, fActionClearImage;
+    private IAction fActionNew, fActionDelete, fActionChooseImage, fActionClearImage, fActionCustomizeLabel;
     
     private Button fImageButton;
+    private Button fCustomizeLabelButton;
     private Canvas fImagePreview;
     private Image fPreviewImage;
     
@@ -209,6 +210,15 @@ public class ProfilesManagerDialog extends ExtendedTitleAreaDialog {
             }
         };
         fActionClearImage.setEnabled(false);
+
+        // Customize Label Expression Action
+        fActionCustomizeLabel = new Action(Messages.LabelExpressionDialog_0) {
+            @Override
+            public void run() {
+                openCustomizeLabelDialog();
+            }
+        };
+        fActionCustomizeLabel.setEnabled(false);
         
         // Create panels
         createTableControl(client);
@@ -221,6 +231,8 @@ public class ProfilesManagerDialog extends ExtendedTitleAreaDialog {
         menuManager.add(new Separator());
         menuManager.add(fActionChooseImage);
         menuManager.add(fActionClearImage);
+        menuManager.add(new Separator());
+        menuManager.add(fActionCustomizeLabel);
         Menu menu = menuManager.createContextMenu(fTableViewer.getControl());
         fTableViewer.getControl().setMenu(menu);
 
@@ -311,6 +323,7 @@ public class ProfilesManagerDialog extends ExtendedTitleAreaDialog {
                 
                 fActionChooseImage.setEnabled(enabled);
                 fActionClearImage.setEnabled(false);
+                fActionCustomizeLabel.setEnabled(enabled);
                 
                 // Image buttons/actions depend on some factors...
                 for(Object o : selection) {
@@ -328,6 +341,7 @@ public class ProfilesManagerDialog extends ExtendedTitleAreaDialog {
                 }
                 
                 fImageButton.setEnabled(fActionChooseImage.isEnabled() || fActionClearImage.isEnabled());
+                fCustomizeLabelButton.setEnabled(fActionCustomizeLabel.isEnabled());
                 
                 // Update Image Preview
                 updateImagePreview();
@@ -417,6 +431,17 @@ public class ProfilesManagerDialog extends ExtendedTitleAreaDialog {
         
         fImagePreview = new Canvas(client, SWT.BORDER);
         GridDataFactory.create(SWT.NONE).hint(IMAGE_SIZE, IMAGE_SIZE).applyTo(fImagePreview);
+                // Customize Label button
+                fCustomizeLabelButton = new Button(client, SWT.PUSH);
+                fCustomizeLabelButton.setText(Messages.LabelExpressionDialog_0);
+                fCustomizeLabelButton.setEnabled(false);
+                GridDataFactory.create(GridData.FILL_HORIZONTAL).applyTo(fCustomizeLabelButton);
+                fCustomizeLabelButton.addSelectionListener(new SelectionAdapter() {
+                    @Override
+                    public void widgetSelected(SelectionEvent e) {
+                        openCustomizeLabelDialog();
+                    }
+                });
         
         fImagePreview.addPaintListener(new PaintListener() {
             @Override
@@ -450,6 +475,17 @@ public class ProfilesManagerDialog extends ExtendedTitleAreaDialog {
         fImagePreview.addDisposeListener((e) -> {
             disposePreviewImage();
         });
+    }
+
+    private void openCustomizeLabelDialog() {
+        IStructuredSelection selection = fTableViewer.getStructuredSelection();
+        if(selection.isEmpty()) {
+            return;
+        }
+        LabelExpressionDialog dialog = new LabelExpressionDialog(getParentShell(), selection.toList().stream().map(o -> (IProfile)o).toList());
+        if(dialog.open() == Window.OK) {
+            fTableViewer.refresh();
+        }
     }
     
     /**
@@ -726,6 +762,8 @@ public class ProfilesManagerDialog extends ExtendedTitleAreaDialog {
             return usage == null ? "" : String.valueOf(usage.size()); //$NON-NLS-1$
         }
     }
+
+    
 
     /**
      * Name Editor

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<title>Specialization of Label Expressions</title>
+<link href="../Styles/style.css" rel="stylesheet" type="text/css" />
+</head>
+
+<body>
+
+    <h2>Specialization of Label Expressions</h2>
+
+    <p>Archi supports defining a label expression on a Specialization so that diagrams can automatically use it when an element does not define its own label expression. This lets you establish consistent labeling patterns for specialized concepts across all Views.</p>
+
+    <h3>How it works</h3>
+    <ul>
+        <li>If an element instance in a View defines its own label expression, that expression is used.</li>
+        <li>Otherwise, if the underlying model element has a Specialization with a label expression, the Specialization’s expression is used.</li>
+        <li>If neither is set, the element’s default name is displayed.</li>
+    </ul>
+
+    <h3>Editing the Specialization’s label</h3>
+    <p>You can add or change a Specialization’s label expression in the <a href="specializations_manager.html">Specializations Manager</a> using the <strong>Customize label</strong> button. The dialog supports editing a single Specialization or applying a label expression to multiple selected Specializations at once.</p>
+
+    <h3>Scope and limitations</h3>
+    <ul>
+        <li>Specializations apply to ArchiMate elements and relationships defined in your model. Objects like Folders, Groups, Notes, View References, and Canvas Connections do not have Specializations.</li>
+        <li>Folder label expressions only affect how child objects are shown in the Model Tree and are unrelated to Specialization labels.</li>
+        <li>Label expressions use the same syntax described in the <a href="https://github.com/archimatetool/archi/wiki/Label-Expressions">Archi Wiki</a>.</li>
+    </ul>
+
+    <p>&nbsp;</p>
+
+</body>
+</html>
