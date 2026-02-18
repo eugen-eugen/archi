@@ -7,8 +7,13 @@ package com.archimatetool.editor.diagram.figures;
 
 import org.eclipse.draw2d.Graphics;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.ImageData;
+import org.eclipse.swt.graphics.PaletteData;
+import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.widgets.Display;
 
 import com.archimatetool.editor.Logger;
 import com.archimatetool.editor.model.IArchiveManager;
@@ -39,6 +44,16 @@ public class IconicDelegate {
      * Store current image path to optimise
      */
     private String fImagePath;
+    
+    /**
+     * Cached colorized version of the image
+     */
+    private Image fColorizedImage;
+    
+    /**
+     * The RGB value used to create the colorized image (for cache invalidation)
+     */
+    private RGB fColorizedRGB;
     
     private int topOffset = 0;
     private int bottomOffset = 0;
@@ -154,9 +169,20 @@ public class IconicDelegate {
      * Draw the icon image in the full figure bounds
      * @param graphics Graphics context
      * @param drawArea The area to draw the image in
+     * TODO no references for this method, consider removing in favour of the one with colorization parameter and passing null for colorization
      */
     public void drawIcon(Graphics graphics, org.eclipse.draw2d.geometry.Rectangle drawArea) {
-        drawIcon(graphics, drawArea, drawArea);
+        drawIcon(graphics, drawArea, drawArea, null);
+    }
+    
+    /**
+     * Draw the icon image in the full figure bounds with colorization
+     * @param graphics Graphics context
+     * @param drawArea The area to draw the image in
+     * @param iconColor The color to colorize the image with, or null for no colorization
+     */
+    public void drawIcon(Graphics graphics, org.eclipse.draw2d.geometry.Rectangle drawArea, Color iconColor) {
+        drawIcon(graphics, drawArea, drawArea, iconColor);
     }
     
     /**
@@ -164,8 +190,20 @@ public class IconicDelegate {
      * @param graphics Graphics context
      * @param figureBounds The bounds of the Figure
      * @param drawArea The area to draw the image in (may be the same as figureBounds)
+     * TODO no references for this method, consider removing in favour of the one with colorization parameter and passing null for colorization
      */
     public void drawIcon(Graphics graphics, org.eclipse.draw2d.geometry.Rectangle figureBounds, org.eclipse.draw2d.geometry.Rectangle drawArea) {
+        drawIcon(graphics, figureBounds, drawArea, null);
+    }
+    
+    /**
+     * Draw the icon image in a given area of the figure with colorization
+     * @param graphics Graphics context
+     * @param figureBounds The bounds of the Figure
+     * @param drawArea The area to draw the image in (may be the same as figureBounds)
+     * @param iconColor The color to colorize the image with, or null for no colorization
+     */
+    public void drawIcon(Graphics graphics, org.eclipse.draw2d.geometry.Rectangle figureBounds, org.eclipse.draw2d.geometry.Rectangle drawArea, Color iconColor) {
         if(fImage == null || fIconic == null) {
             return;
         }
@@ -234,10 +272,13 @@ public class IconicDelegate {
         // Ensure image is drawn in full alpha
         graphics.setAlpha(255);
         
+        // Get the image to draw (colorized if color specified)
+        Image imageToDraw = iconColor!=null?getImageToDraw(iconColor):fImage;
+        
         // Fill
         if(fIconic.getImagePosition() == IIconic.ICON_POSITION_FILL) {
             // Fill
-            // graphics.drawImage(fImage, figureBounds.x, figureBounds.y, figureBounds.width, figureBounds.height);
+            // graphics.drawImage(imageToDraw, figureBounds.x, figureBounds.y, figureBounds.width, figureBounds.height);
             
             // Cover Fill (algorithm from JB the maths wizard)
             float imageRatio  = (float) imageBounds.width / imageBounds.height;
@@ -249,31 +290,110 @@ public class IconicDelegate {
             x = figureBounds.x - (newWidth / 2) + (figureBounds.width / 2);
             y = figureBounds.y - (newHeight / 2) + (figureBounds.height / 2);
             
-            drawImage(imageBounds, graphics, x, y, newWidth, newHeight);
+            drawImage(imageToDraw, imageBounds, graphics, x, y, newWidth, newHeight);
         }
         // Full image size
         else if(fMaxImageSize == MAX_IMAGESIZE) {
-            graphics.drawImage(fImage, x, y);
+            graphics.drawImage(imageToDraw, x, y);
         }
         // Scaled image size
         else {
-            drawImage(imageBounds, graphics, x, y, width, height);
+            drawImage(imageToDraw, imageBounds, graphics, x, y, width, height);
         }
         
         graphics.popState();
     }
     
     /**
+     * Get the image to draw, colorized if a color is specified
+     * @param iconColor The color to colorize with
+     * @return The image to draw
+     */
+    private Image getImageToDraw(Color iconColor) {
+
+        
+        RGB targetRGB = iconColor.getRGB();
+        
+        // Check if we already have a cached colorized image for this color
+        if(fColorizedImage != null && !fColorizedImage.isDisposed() && targetRGB.equals(fColorizedRGB)) {
+            return fColorizedImage;
+        }
+        
+        // Dispose old colorized image if exists
+        disposeColorizedImage();
+        
+        // Create new colorized image
+        fColorizedImage = createColorizedImage(fImage, targetRGB);
+        fColorizedRGB = targetRGB;
+        
+        return fColorizedImage != null ? fColorizedImage : fImage;
+    }
+    
+    /**
+     * Create a colorized copy of the image.
+     * Maps original luminance to shades between the target color (dark) and white (light).
+     * Preserves alpha transparency.
+     * 
+     * @param source The source image
+     * @param targetRGB The color to colorize with
+     * @return A new colorized Image, or null if creation fails
+     */
+    private Image createColorizedImage(Image source, RGB targetRGB) {
+        if(source == null || source.isDisposed()) {
+            return null;
+        }
+        
+        try {
+            ImageData sourceData = source.getImageData();
+            ImageData colorizedData = (ImageData) sourceData.clone();
+            
+            PaletteData palette = colorizedData.palette;
+            
+            for(int y = 0; y < colorizedData.height; y++) {
+                for(int x = 0; x < colorizedData.width; x++) {
+                    int pixel = colorizedData.getPixel(x, y);
+                    RGB originalRGB = palette.getRGB(pixel);
+                    
+                    // Calculate luminance (perceived brightness)
+                    float luminance = (0.299f * originalRGB.red + 0.587f * originalRGB.green + 0.114f * originalRGB.blue) / 255f;
+                    
+                    // Map luminance to color gradient: dark areas → targetColor, light areas → white
+                    int newRed = (int) (targetRGB.red + luminance * (255 - targetRGB.red));
+                    int newGreen = (int) (targetRGB.green + luminance * (255 - targetRGB.green));
+                    int newBlue = (int) (targetRGB.blue + luminance * (255 - targetRGB.blue));
+                    
+                    // Clamp values
+                    newRed = Math.min(255, Math.max(0, newRed));
+                    newGreen = Math.min(255, Math.max(0, newGreen));
+                    newBlue = Math.min(255, Math.max(0, newBlue));
+                    
+                    RGB newRGB = new RGB(newRed, newGreen, newBlue);
+                    int newPixel = palette.getPixel(newRGB);
+                    colorizedData.setPixel(x, y, newPixel);
+                    
+                    // Alpha is preserved automatically as we only modify the color, not alpha data
+                }
+            }
+            
+            return new Image(Display.getCurrent(), colorizedData);
+        }
+        catch(Exception ex) {
+            Logger.error("Could not colorize image!", ex);
+            return null;
+        }
+    }
+    
+    /**
      * Draw the image with checks ensuring minimum width and height
      */
-    private void drawImage(Rectangle imageBounds, Graphics graphics, int x, int y, int width, int height) {
+    private void drawImage(Image image, Rectangle imageBounds, Graphics graphics, int x, int y, int width, int height) {
         // Safety width and height checks
         int w1 = Math.max(0, imageBounds.width);
         int h1 = Math.max(0, imageBounds.height);
         int w2 = Math.max(0, width);
         int h2 = Math.max(0, height);
         
-        graphics.drawImage(fImage, 0, 0, w1, h1, x, y, w2, h2);
+        graphics.drawImage(image, 0, 0, w1, h1, x, y, w2, h2);
     }
     
     /**
@@ -298,5 +418,14 @@ public class IconicDelegate {
             fImage.dispose();
             fImage = null;
         }
+        disposeColorizedImage();
+    }
+    
+    private void disposeColorizedImage() {
+        if(fColorizedImage != null && !fColorizedImage.isDisposed()) {
+            fColorizedImage.dispose();
+            fColorizedImage = null;
+        }
+        fColorizedRGB = null;
     }
 }

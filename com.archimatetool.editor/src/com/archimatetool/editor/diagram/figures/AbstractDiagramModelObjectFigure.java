@@ -21,6 +21,7 @@ import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Pattern;
+import org.eclipse.swt.graphics.RGB;
 
 import com.archimatetool.editor.ArchiPlugin;
 import com.archimatetool.editor.diagram.figures.FigureUtils.Direction;
@@ -320,7 +321,7 @@ implements IDiagramModelObjectFigure {
      */
     public void drawIconImage(Graphics graphics, Rectangle drawArea) {
         if(hasIconImage()) {
-            getIconicDelegate().drawIcon(graphics, drawArea); // Call this directly in case offsets are set elsewhere
+            getIconicDelegate().drawIcon(graphics, drawArea, getIconColorForImageColorization()); // Call this directly in case offsets are set elsewhere
         }
     }
     
@@ -337,7 +338,7 @@ implements IDiagramModelObjectFigure {
     public void drawIconImage(Graphics graphics, Rectangle figureBounds, Rectangle drawArea, int topOffset, int rightOffset, int bottomOffset, int leftOffset) {
         if(hasIconImage()) {
             getIconicDelegate().setOffsets(topOffset, rightOffset, bottomOffset, leftOffset);
-            getIconicDelegate().drawIcon(graphics, figureBounds, drawArea);
+            getIconicDelegate().drawIcon(graphics, figureBounds, drawArea, getIconColorForImageColorization());
         }
     }
 
@@ -401,6 +402,23 @@ implements IDiagramModelObjectFigure {
                     String val = getDiagramModelObject().getIconColor();
                     return StringUtils.isSet(val) ? ColorFactory.get(val) : ColorConstants.black;
                 });
+    }
+    
+    /**
+     * Get the icon color for custom image colorization.
+     * Returns null if the color is black (default), meaning no colorization should be applied.
+     * @return The icon color, or null for black/default (no colorization)
+     */
+    private Color getIconColorForImageColorization() {
+        Color color = getIconColor();
+        // Don't colorize if color is black (the default)
+        if(color != null) {
+            RGB rgb = color.getRGB();
+            if(rgb.red == 0 && rgb.green == 0 && rgb.blue == 0) {
+                return null;
+            }
+        }
+        return color;
     }
 
     /**
